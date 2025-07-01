@@ -13,7 +13,7 @@ export default function UploadForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [facturaErrors, setFacturaErrors] = useState([]);
-  
+
   // Añadir una factura vacía al iniciar el componente
   useEffect(() => {
     if (formData.facturas.length === 0) {
@@ -111,11 +111,10 @@ export default function UploadForm() {
       newErrors.email = 'Introduce un email válido';
     }
     
-    // Validar al menos una factura
+    // Validar facturas
     if (formData.facturas.length === 0) {
       newErrors.facturas = 'Debes adjuntar al menos una factura';
     } else {
-      // Validar cada factura
       formData.facturas.forEach((factura, index) => {
         if (!factura) {
           newFacturaErrors[index] = 'Debes adjuntar la factura';
@@ -124,10 +123,8 @@ export default function UploadForm() {
       });
     }
     
-    // Actualizar errores de facturas
     setFacturaErrors(newFacturaErrors);
     
-    // Si hay errores en las facturas, añadirlos a los errores generales
     if (hasFacturaErrors) {
       newErrors.facturaGeneral = 'Hay facturas sin adjuntar';
     }
@@ -138,7 +135,6 @@ export default function UploadForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Si no hay facturas añadidas, agregar al menos una para validación
     if (formData.facturas.length === 0) {
       addFactura();
       return;
@@ -170,7 +166,6 @@ export default function UploadForm() {
       setFacturaErrors([]);
       setSubmitSuccess(true);
       
-      // Ocultar el mensaje de éxito después de 5 segundos
       setTimeout(() => {
         setSubmitSuccess(false);
       }, 5000);
@@ -341,7 +336,6 @@ export default function UploadForm() {
             {isSubmitting ? 'Enviando...' : 'Enviar Formulario'}
           </button>
         </div>
-      </form>
       </form>
     </div>
   );
