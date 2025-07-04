@@ -7,7 +7,6 @@ COPY src/server/package.json ./
 RUN npm install --quiet
 
 # Copiar solo los archivos necesarios para el servidor
-COPY .env ./
 COPY src/server ./src/server
 
 # Definir variables de entorno
