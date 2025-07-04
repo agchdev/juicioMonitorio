@@ -1,6 +1,7 @@
 // src/components/Step2Formulario.jsx
 
 import React, { useState } from "react";
+import jsPDF from 'jspdf';
 
 const Step2Formulario = ({ data, setData, onNext, onBack }) => {
   const [localData, setLocalData] = useState({
@@ -35,11 +36,185 @@ const Step2Formulario = ({ data, setData, onNext, onBack }) => {
     }
   };
 
+  // Función para generar el PDF con formato legal
+  const generatePDF = (formData, personalData) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    let y = 30;
+
+    // Configurar fuente
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+
+    // Encabezado
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    const header = "AL JUZGADO DE PRIMERA INSTANCIA DE GRANADA";
+    const headerWidth = doc.getTextWidth(header);
+    doc.text(header, (pageWidth - headerWidth) / 2, y);
+    y += 20;
+
+    // Introducción del procurador
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    const intro = `${deudorCompleto}, Procurador de los Tribunales, en nombre de LAMITOOLS INGENIERÍA S.L, cuya representación acreditaré mediante comparecencia "apud acta" y asistido del Letrado del Ilustre Colegio de Abogados de Granada, José Manuel Aguayo Pozo, Colegiado 3031, como mejor proceda en derecho, comparezco y DIGO:`;
+    
+    const introLines = doc.splitTextToSize(intro, pageWidth - 40);
+    doc.text(introLines, 20, y);
+    y += introLines.length * 6 + 10;
+
+    // Convertir cantidad a letras (función básica)
+    const convertirCantidadALetras = (cantidad) => {
+      // Implementación básica - se puede mejorar
+      const num = parseFloat(cantidad || 0);
+      return num.toLocaleString('es-ES', { 
+        style: 'currency', 
+        currency: 'EUR',
+        minimumFractionDigits: 2 
+      }).replace('€', '').trim().toUpperCase() + ' EUROS';
+    };
+
+    // Petición inicial con datos reales
+    const importeLetras = convertirCantidadALetras(formData.importeTotal);
+    const deudorCompleto = `${formData.datosDeudor?.nombre || ''} ${formData.datosDeudor?.apellidos || ''}`.trim();
+    const direccionCompleta = `${formData.datosDeudor?.direccion || ''}, ${formData.datosDeudor?.ciudad || ''}, ${formData.datosDeudor?.codigoPostal || ''} ${formData.datosDeudor?.provincia || ''}`.replace(/,\s*,/g, ',').replace(/^,\s*|,\s*$/g, '');
+    
+    const peticion = `Que en la representación que ostento y siguiendo instrucciones de mi mandante, por medio del presente escrito formulo PETICIÓN INICIAL DE PROCEDIMIENTO MONITORIO en reclamación de ${importeLetras} (${formData.importeTotal || '0,00'}€) de principal, en contra de ${deudorCompleto || 'DEUDOR NO ESPECIFICADO'}, con domicilio en ${direccionCompleta || 'DIRECCIÓN NO ESPECIFICADA'}, en base a los hechos que a continuación se detallan:`;
+    
+    const peticionLines = doc.splitTextToSize(peticion, pageWidth - 40);
+    doc.text(peticionLines, 20, y);
+    y += peticionLines.length * 6 + 15;
+
+    // Sección HECHOS
+    doc.setFont("helvetica", "bold");
+    const hechos = "HECHOS";
+    const hechosWidth = doc.getTextWidth(hechos);
+    doc.text(hechos, (pageWidth - hechosWidth) / 2, y);
+    y += 15;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("PRIMERO: ORIGEN Y CUANTÍA DE LA DEUDA", 20, y);
+    y += 10;
+    
+    doc.setFont("helvetica", "normal");
+    const hecho1 = `En virtud de las relaciones comerciales existentes entre las partes, mi mandante ha procedido al suministro de materiales consistentes en perfilería de aluminio y accesorios necesarios para la ejecución de diversos trabajos de obra, en cumplimiento con los acuerdos establecidos. Dichos materiales fueron entregados de conformidad con las necesidades y especificaciones previamente acordadas con la parte demandada, quien se comprometió al pago de los mismos.`;
+    
+    const hecho1Lines = doc.splitTextToSize(hecho1, pageWidth - 40);
+    doc.text(hecho1Lines, 20, y);
+    y += hecho1Lines.length * 6 + 10;
+
+    // Agregar nueva página si es necesario
+    if (y > 250) {
+      doc.addPage();
+      y = 30;
+    }
+
+    // Detalles de las facturas con datos del formulario
+    const facturaInfo = `Por los suministros entregados se han devengado las siguientes facturas, que se acompañan junto con sus albaranes correspondientes:
+
+• Facturación relacionada con el importe reclamado de ${formData.importeTotal || '0.00'}€
+• Fecha de factura: ${formData.fechaFactura || 'No especificada'}
+• Descripción: ${formData.descripcionDeuda || 'Suministros diversos'}
+
+El importe total adeudado asciende a ${formData.importeTotal || '0.00'} EUROS, correspondiente a los suministros entregados, mencionados y documentados.`;
+    
+    const facturaLines = doc.splitTextToSize(facturaInfo, pageWidth - 40);
+    doc.text(facturaLines, 20, y);
+    y += facturaLines.length * 6 + 10;
+
+    // SEGUNDO hecho
+    doc.setFont("helvetica", "bold");
+    doc.text("SEGUNDO: DE LA RECLAMACIÓN EXTRAJUDICIAL", 20, y);
+    y += 10;
+    
+    doc.setFont("helvetica", "normal");
+    const hecho2 = `En este sentido, se intentó requerir el pago mediante burofax enviado con fecha 24 de Octubre de 2024, cuya copia que se acompaña como documento número siete. Todas las gestiones amistosas realizadas con la demandada para intentar solventar la controversia han resultado infructuosas por cuanto no ha quedado otra alternativa que la interposición de la presente para reclamar la suma pendiente de pago conforme a las facturas acompañadas.`;
+    
+    const hecho2Lines = doc.splitTextToSize(hecho2, pageWidth - 40);
+    doc.text(hecho2Lines, 20, y);
+    y += hecho2Lines.length * 6 + 15;
+
+    // Fundamentos de derecho
+    if (y > 220) {
+      doc.addPage();
+      y = 30;
+    }
+
+    doc.setFont("helvetica", "bold");
+    const fundamentos = "FUNDAMENTOS DE DERECHO";
+    const fundamentosWidth = doc.getTextWidth(fundamentos);
+    doc.text(fundamentos, (pageWidth - fundamentosWidth) / 2, y);
+    y += 15;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("-I-", (pageWidth - doc.getTextWidth("-I-")) / 2, y);
+    y += 10;
+    
+    doc.setFont("helvetica", "normal");
+    const competencia = `Competencia: De conformidad con lo establecido en el artículo 813 de la Ley 1/2000 de Enjuiciamiento Civil es competente el Juzgado de Primera Instancia del domicilio del deudor.`;
+    const competenciaLines = doc.splitTextToSize(competencia, pageWidth - 40);
+    doc.text(competenciaLines, 20, y);
+    y += competenciaLines.length * 6 + 10;
+
+    const procedimiento = `Procedimiento: El procedimiento monitorio aparece regulado en el artículo 814 de la misma Ley 1/2000.`;
+    const procedimientoLines = doc.splitTextToSize(procedimiento, pageWidth - 40);
+    doc.text(procedimientoLines, 20, y);
+    y += procedimientoLines.length * 6 + 10;
+
+    const cuantia = `Cuantía: La cuantía de la deuda queda fijada en la suma de ${importeLetras} (${formData.importeTotal || '0,00'}€) de principal.`;
+    const cuantiaLines = doc.splitTextToSize(cuantia, pageWidth - 40);
+    doc.text(cuantiaLines, 20, y);
+    y += cuantiaLines.length * 6 + 15;
+
+    // Aplicación del artículo
+    doc.setFont("helvetica", "bold");
+    doc.text("-II-", (pageWidth - doc.getTextWidth("-II-")) / 2, y);
+    y += 10;
+    
+    doc.setFont("helvetica", "normal");
+    const articulo = `Es de aplicación el artículo 812.1.2º de la Ley 1/2000 de Enjuiciamiento Civil, al exigirse el pago de una deuda vencida, líquida y exigible representada por facturas y albaranes.`;
+    const articuloLines = doc.splitTextToSize(articulo, pageWidth - 40);
+    doc.text(articuloLines, 20, y);
+    y += articuloLines.length * 6 + 10;
+
+    const procedePor = `Por lo que procede y,`;
+    doc.text(procedePor, 20, y);
+    y += 15;
+
+    // Súplica final
+    if (y > 200) {
+      doc.addPage();
+      y = 30;
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.text("SUPLICO AL JUZGADO:", 20, y);
+    y += 10;
+    
+    doc.setFont("helvetica", "normal");
+    const suplica = `Que teniendo por presentado este escrito con los documentos y copias que se acompañan, se sirva admitirlos y me tenga por personado en nombre de LAMITOOLS INGENIERÍA S.L y por formulada PETICIÓN INICIAL DE PROCESO MONITORIO en contra de ${deudorCompleto || 'DEUDOR NO ESPECIFICADO'}, a fin de que se requiera al deudor para que en el plazo de veinte días, pague la cantidad que se reclama ascendente a la suma de ${importeLetras} (${formData.importeTotal || '0,00'}€) de principal; y para el caso de que en dicho plazo no atienda el requerimiento, se compulse alegando razones de la negativa de pago, se dicte decreto dando por terminado el proceso monitorio y se me dé traslado del mismo para que pueda instar el despacho de ejecución; que si el deudor se opone por escrito alegando razones para negarse total o parcialmente al pago, se dé por terminado el monitorio y se acuerde seguir por los trámites del juicio verbal, dándome traslado de la oposición para poder ser impugnada, todo ello por ser de justicia que pido.`;
+    
+    const suplicaLines = doc.splitTextToSize(suplica, pageWidth - 40);
+    doc.text(suplicaLines, 20, y);
+    y += suplicaLines.length * 6 + 15;
+
+    // Fecha y lugar
+    const fecha = `En Granada a 20 de Noviembre de 2024.`;
+    doc.text(fecha, 20, y);
+
+    // Guardar el PDF
+    doc.save('jm.pdf');
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Generar el PDF antes de continuar
+    const personalData = JSON.parse(localStorage.getItem('personalData') || '{}');
+    generatePDF(localData, personalData);
+    
     setData(localData);
     onNext();
-    // Aquí después podrás hacer la llamada real al backend o generar el PDF
   };
 
   return (

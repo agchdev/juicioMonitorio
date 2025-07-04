@@ -1,16 +1,28 @@
-// src/components/Form.jsx
-
 import React, { useState } from "react";
 import Step1Personal from "../components/Step1Personal";
 import Step2Formulario from "../components/Step2Formulario";
 import Step3Facturas from "../components/Step3Facturas";
 
+// Obtener la URL de la API desde las variables de entorno
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 const Form = () => {
   const [step, setStep] = useState(1);
-  // Aquí puedes centralizar los datos de todos los pasos si quieres pasarlos entre componentes:
-  const [personalData, setPersonalData] = useState({});
+  // Inicializar datos personales desde localStorage si existen
+  const [personalData, setPersonalData] = useState(() => {
+    const savedData = localStorage.getItem('personalData');
+    return savedData ? JSON.parse(savedData) : {};
+  });
   const [formData, setFormData] = useState({});
   const [facturas, setFacturas] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  
+  // Función para actualizar datos personales
+  const updatePersonalData = (data) => {
+    setPersonalData(data);
+    localStorage.setItem('personalData', JSON.stringify(data));
+  };
 
   const nextStep = () => setStep((s) => s + 1);
   const prevStep = () => setStep((s) => s - 1);
@@ -20,6 +32,32 @@ const Form = () => {
     { number: 2, title: "Formulario", description: "Detalles del caso" },
     { number: 3, title: "Documentos", description: "Subir archivos" }
   ];
+
+  // Función para enviar el formulario completo por email
+  const handleSend = async () => {
+    setLoading(true);
+    try {
+      // Usamos FormData para enviar también los archivos
+      const formDataToSend = new FormData();
+      formDataToSend.append("data", JSON.stringify({ personalData, formData }));
+      // facturas debe ser array de File
+      facturas.forEach(file => {
+        formDataToSend.append("facturas", file);
+      });
+
+      const res = await fetch(`${API_URL}/api/enviar-documentos`, {
+        method: "POST",
+        body: formDataToSend
+      });
+
+      if (res.ok) setSuccess(true);
+      else throw new Error("Error enviando el formulario");
+    } catch (error) {
+      alert("Error enviando el formulario: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 py-8 flex items-center justify-center">
@@ -69,33 +107,41 @@ const Form = () => {
 
         {/* Form Content */}
         <div className="bg-gray-800 rounded-xl shadow-2xl p-8 flex flex-col items-center">
-          {step === 1 && (
-            <div className="w-full max-w-lg">
-              <Step1Personal
-                data={personalData}
-                setData={setPersonalData}
-                onNext={nextStep}
-              />
-            </div>
-          )}
-          {step === 2 && (
-            <div className="w-full max-w-xl">
-              <Step2Formulario
-                data={formData}
-                setData={setFormData}
-                onNext={nextStep}
-                onBack={prevStep}
-              />
-            </div>
-          )}
-          {step === 3 && (
-            <div className="w-full max-w-xl">
-              <Step3Facturas
-                files={facturas}
-                setFiles={setFacturas}
-                onBack={prevStep}
-              />
-            </div>
+          {success ? (
+            <div className="text-green-400 text-xl font-bold">¡Formulario enviado correctamente!</div>
+          ) : (
+            <>
+              {step === 1 && (
+                <div className="w-full max-w-lg">
+                  <Step1Personal
+                    data={personalData}
+                    setData={updatePersonalData}
+                    onNext={nextStep}
+                  />
+                </div>
+              )}
+              {step === 2 && (
+                <div className="w-full max-w-xl">
+                  <Step2Formulario
+                    data={formData}
+                    setData={setFormData}
+                    onNext={nextStep}
+                    onBack={prevStep}
+                  />
+                </div>
+              )}
+              {step === 3 && (
+                <div className="w-full max-w-xl">
+                  <Step3Facturas
+                    files={facturas}
+                    setFiles={setFacturas}
+                    onBack={prevStep}
+                    onSubmit={handleSend} // <-- Añade esta prop
+                    loading={loading}     // <-- Opcional, para deshabilitar botón
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

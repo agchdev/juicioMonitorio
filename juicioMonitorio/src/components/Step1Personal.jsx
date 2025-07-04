@@ -6,8 +6,8 @@ const Step1Personal = ({ data, setData, onNext }) => {
   const [localData, setLocalData] = useState({
     nombre: data.nombre || "",
     apellido: data.apellido || "",
-    correo: data.correo || "",
-    numero: data.numero || "",
+    email: data.email || data.correo || "",
+    telefono: data.telefono || data.numero || "",
   });
 
   const handleChange = (e) => {
@@ -69,10 +69,10 @@ const Step1Personal = ({ data, setData, onNext }) => {
             Correo Electrónico *
           </label>
           <input
-            name="correo"
+            name="email"
             type="email"
             placeholder="ejemplo@correo.com"
-            value={localData.correo}
+            value={localData.email}
             onChange={handleChange}
             className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             required
@@ -84,10 +84,10 @@ const Step1Personal = ({ data, setData, onNext }) => {
             Número de Teléfono *
           </label>
           <input
-            name="numero"
+            name="telefono"
             type="tel"
             placeholder="Ej: +34 123 456 789"
-            value={localData.numero}
+            value={localData.telefono}
             onChange={handleChange}
             className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             required
