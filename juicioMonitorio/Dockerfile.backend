@@ -13,7 +13,7 @@ COPY src/server ./src/server
 ENV NODE_ENV=production
 
 # Exponer puerto del backend
-EXPOSE 4001
+EXPOSE 3001
 
 # Comando para iniciar el servidor
 CMD ["node", "src/server/index.js"]
