@@ -8,11 +8,12 @@ services:
       dockerfile: Dockerfile.frontend
     container_name: juicio-monitorio-frontend
     ports:
-      - "8080:80"
+      - "4000:4000"
     depends_on:
       - backend
     restart: always
     networks:
+      - emb-network
       - app-network
 
   # Servicio Backend - API con Express
@@ -22,7 +23,7 @@ services:
       dockerfile: Dockerfile.backend
     container_name: juicio-monitorio-backend
     ports:
-      - "3001:3001"
+      - "4001:4001"
     environment:
       - NODE_ENV=production
       - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
@@ -33,9 +34,12 @@ services:
       - ADMIN_EMAIL=${ADMIN_EMAIL}
     restart: always
     networks:
+      - emb-network
       - app-network
 
 
 networks:
   app-network:
     driver: bridge
+  emb-network:
+    external: true
